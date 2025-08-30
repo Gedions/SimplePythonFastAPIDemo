@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Books</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-..." crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-2.2.0/datatables.min.css" />
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>Books</h1>
+
+        <div class="row my-4">
+            <div class="col">
+                <input class="form-control" id="title" placeholder="Title" />
+            </div>
+            <div class="col">
+                <input class="form-control" id="author" placeholder="Author" />
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" onclick="addBook()">Add</button>
+            </div>
+        </div>
+        <table id="booksTable" class="table table-striped table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h1>Exams</h1>
+
+        <form id="examForm" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col my-2">
+                    <input class="form-control" type="text" id="examtitle" placeholder="Title" />
+                </div>
+                <div class="col my-2">
+                    <input class="form-control" type="text" id="examcode" placeholder="Code" />
+                </div>
+                <div class="col my-2">
+                    <input class="form-control" type="text" id="examtype" placeholder="Type" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col my-2">
+                    <input class="form-control" type="text" id="examyear" placeholder="Year" />
+                </div>
+                <div class="col my-2">
+                    <input class="form-control" type="text" id="examuserid" placeholder="UserId" />
+                </div>
+                <div class="col my-2">
+                    <input class="form-control" type="file" id="examfilename" placeholder="File" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Exam</button>
+        </form>
+        <table id="examTable" class="display">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Year</th>
+                    <th>File</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-..."
+        crossorigin="anonymous"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-2.2.0/datatables.min.js"></script>
+
+    <script>
+        document.getElementById("examForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            console.log("Submitting exam form");
+            const formData = new FormData(this);
+            formData.forEach((value, key) => {
+                console.log(`${key}: ${value}`);
+            });
+            console.log("done!");
+            // const res = await fetch("/api/exams/", {
+            //     method: "POST",
+            //     body: formData
+            // });
+            // const data = await res.json();
+            // alert("Exam uploaded: " + data.title);
+            // loadExams();
+        });
+
+        async function loadExams() {
+            const res = await fetch("/api/exams/");
+            const exams = await res.json();
+
+            const table = $('#examTable').DataTable();
+            table.clear();
+
+            exams.forEach(ex => {
+                table.row.add([
+                    ex.id,
+                    ex.title,
+                    ex.code,
+                    ex.type,
+                    ex.year,
+                    `<a href="/uploads/${ex.filename}" target="_blank">${ex.filename}</a>`
+                ]);
+            });
+
+            table.draw();
+        }
+
+    </script>
+
+    <script>
+        async function loadBooks() {
+            const res = await fetch('/api/books');
+            const books = await res.json();
+
+            const table = $('#booksTable').DataTable();
+            table.clear();
+
+            books.forEach(b => {
+                table.row.add([
+                    b.id,
+                    b.title,
+                    b.author,
+                    `<button class="btn btn-sm btn-info" onclick="renameBook(${b.id})">Rename</button>
+           <button class="btn btn-sm btn-danger" onclick="deleteBook(${b.id})">Delete</button>`
+                ]);
+            });
+
+            table.draw();
+        }
+
+        async function addExam() {
+            const title = document.getElementById('examtitle').value.trim();
+            const code = document.getElementById('examcode').value.trim();
+            const type = document.getElementById('examtype').value.trim();
+            const year = document.getElementById('examyear').value.trim();
+            const filename = document.getElementById('examfilename').value.trim();
+            const userid = document.getElementById('examuserid').value.trim();
+            if (!title || !code || !type || !year || !filename || !userid)
+                return alert('Please enter all exam details');
+
+            await fetch('/api/exams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, code, type, year, filename, userid })
+            });
+
+            document.getElementById('examtitle').value = '';
+            document.getElementById('examcode').value = '';
+            document.getElementById('examtype').value = '';
+            document.getElementById('examyear').value = '';
+            document.getElementById('examfilename').value = '';
+            document.getElementById('examuserid').value = '';
+        }
+
+        async function addBook() {
+            const title = document.getElementById('title').value.trim();
+            const author = document.getElementById('author').value.trim();
+            if (!title || !author) return alert('Please enter both title and author');
+
+            await fetch('/api/books', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author })
+            });
+
+            document.getElementById('title').value = '';
+            document.getElementById('author').value = '';
+            loadBooks();
+        }
+
+        async function deleteBook(id) {
+            await fetch(`/api/books/${id}`, { method: 'DELETE' });
+            loadBooks();
+        }
+
+        async function renameBook(id) {
+            const title = prompt('New title?');
+            const author = prompt('New author? (leave blank to keep the same)');
+            const payload = {};
+            if (title) payload.title = title;
+            if (author) payload.author = author;
+
+            await fetch(`/api/books/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            loadBooks();
+        }
+
+        loadBooks();
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            $('#yourTableId').DataTable();
+        });
+    </script>
+</body>
+
+</html>
