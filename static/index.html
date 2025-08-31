@@ -40,6 +40,7 @@
 
         <h1>Exams</h1>
         <form id="examForm" enctype="multipart/form-data">
+            <input type="hidden" name="id" />
             <div class="row">
                 <div class="col my-2">
                     <input class="form-control" type="text" id="examtitle" name="title" placeholder="Title" />
@@ -73,6 +74,7 @@
                     <th>Type</th>
                     <th>Year</th>
                     <th>File</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -89,11 +91,19 @@
         document.getElementById("examForm").addEventListener("submit", async function (e) {
             e.preventDefault();
             const formData = new FormData(e.target);
+            const id = formData.get("id");
 
-            const response = await fetch("/api/exams/", {
-                method: "POST",
-                body: formData
-            });
+            if (id) {
+                const response = await fetch("/api/exams/", {
+                    method: "PUT",
+                    body: formData
+                });
+            } else {
+                const response = await fetch("/api/exams/", {
+                    method: "POST",
+                    body: formData
+                });
+            }
 
             const result = await response.json();
             e.target.reset();
@@ -115,14 +125,37 @@
                     ex.code,
                     ex.type,
                     ex.year,
-                    `<a href="/${ex.filename}" target="_blank">${ex.filename}</a>`
+                    `<a href="/${ex.filename}" target="_blank">${ex.filename}</a>`,
+                    `<button class="btn btn-sm btn-info" onclick="editExam(${ex.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteExam(${ex.id})">Delete</button>`
                 ]);
             });
 
             table.draw();
         }
-        
+
+        async function editExam(id) {
+            const exam = await fetch(`/api/exams/${id}`,
+                { method: 'GET' })
+                .then(res => res.json());
+            const form = document.getElementById("examForm");
+            form.querySelector("[name='id']").value = exam.id;
+            form.querySelector("[name='title']").value = exam.title;
+            form.querySelector("[name='code']").value = exam.code;
+            form.querySelector("[name='type']").value = exam.type;
+            form.querySelector("[name='year']").value = exam.year;
+            form.querySelector("[name='userid']").value = exam.userid;
+        }
+
+        async function deleteExam(id) {
+            await fetch(`/api/exams/${id}`, { method: 'DELETE' });
+            loadExams();
+        }
+
+
         loadExams();
+
+
     </script>
 
     <script>
@@ -138,8 +171,8 @@
                     b.id,
                     b.title,
                     b.author,
-                    `<button class="btn btn-sm btn-info" onclick="renameBook(${b.id})">Rename</button>
-           <button class="btn btn-sm btn-danger" onclick="deleteBook(${b.id})">Delete</button>`
+                    `<button class= "btn btn-sm btn-info" onclick = "renameBook(${b.id})"> Rename </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBook(${b.id})">Delete</button>`
                 ]);
             });
 
@@ -161,7 +194,7 @@
         });
 
         async function deleteBook(id) {
-            await fetch(`/api/books/${id}`, { method: 'DELETE' });
+            await fetch(`/ api / books / ${id}`, { method: 'DELETE' });
             loadBooks();
         }
 
@@ -172,7 +205,7 @@
             if (title) payload.title = title;
             if (author) payload.author = author;
 
-            await fetch(`/api/books/${id}`, {
+            await fetch(`/ api / books / ${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
