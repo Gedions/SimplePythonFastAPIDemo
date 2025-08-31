@@ -39,28 +39,27 @@
         </table>
 
         <h1>Exams</h1>
-
         <form id="examForm" enctype="multipart/form-data">
             <div class="row">
                 <div class="col my-2">
-                    <input class="form-control" type="text" id="examtitle" placeholder="Title" />
+                    <input class="form-control" type="text" id="examtitle" name="title" placeholder="Title" />
                 </div>
                 <div class="col my-2">
-                    <input class="form-control" type="text" id="examcode" placeholder="Code" />
+                    <input class="form-control" type="text" id="examcode" name="code" placeholder="Code" />
                 </div>
                 <div class="col my-2">
-                    <input class="form-control" type="text" id="examtype" placeholder="Type" />
+                    <input class="form-control" type="text" id="examtype" name="type" placeholder="Type" />
                 </div>
             </div>
             <div class="row">
                 <div class="col my-2">
-                    <input class="form-control" type="text" id="examyear" placeholder="Year" />
+                    <input class="form-control" type="text" id="examyear" name="year" placeholder="Year" />
                 </div>
                 <div class="col my-2">
-                    <input class="form-control" type="text" id="examuserid" placeholder="UserId" />
+                    <input class="form-control" type="text" id="examuserid" name="userid" placeholder="UserId" />
                 </div>
                 <div class="col my-2">
-                    <input class="form-control" type="file" id="examfilename" placeholder="File" />
+                    <input class="form-control" type="file" id="examfilename" name="filename" />
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">Add Exam</button>
@@ -87,21 +86,20 @@
     <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-2.2.0/datatables.min.js"></script>
 
     <script>
-        document.getElementById("examForm").addEventListener("submit", function (e) {
+        document.getElementById("examForm").addEventListener("submit", async function (e) {
             e.preventDefault();
-            console.log("Submitting exam form");
-            const formData = new FormData(this);
-            formData.forEach((value, key) => {
-                console.log(`${key}: ${value}`);
+            const formData = new FormData(e.target);
+            
+            const response = await fetch("/api/exams/", {
+                method: "POST",
+                body: formData
             });
-            console.log("done!");
-            // const res = await fetch("/api/exams/", {
-            //     method: "POST",
-            //     body: formData
-            // });
-            // const data = await res.json();
-            // alert("Exam uploaded: " + data.title);
-            // loadExams();
+            
+            const result = await response.json();
+            console.log(result);
+            alert(result.message);
+            e.target.reset();
+            loadExams();
         });
 
         async function loadExams() {
@@ -146,30 +144,6 @@
             });
 
             table.draw();
-        }
-
-        async function addExam() {
-            const title = document.getElementById('examtitle').value.trim();
-            const code = document.getElementById('examcode').value.trim();
-            const type = document.getElementById('examtype').value.trim();
-            const year = document.getElementById('examyear').value.trim();
-            const filename = document.getElementById('examfilename').value.trim();
-            const userid = document.getElementById('examuserid').value.trim();
-            if (!title || !code || !type || !year || !filename || !userid)
-                return alert('Please enter all exam details');
-
-            await fetch('/api/exams', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, code, type, year, filename, userid })
-            });
-
-            document.getElementById('examtitle').value = '';
-            document.getElementById('examcode').value = '';
-            document.getElementById('examtype').value = '';
-            document.getElementById('examyear').value = '';
-            document.getElementById('examfilename').value = '';
-            document.getElementById('examuserid').value = '';
         }
 
         async function addBook() {
