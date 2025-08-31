@@ -36,6 +36,13 @@ def add_book(title: str = Form(...),
 def read_books(db: Session = Depends(get_db)):
     return crud.get_books(db)
 
+@app.get("/api/books/{book_id}", response_model=schemas.BookOut)
+def read_book(book_id: int, db: Session = Depends(get_db)):
+    book = crud.get_book(db, book_id)
+    if book is None:
+        return {"error": "Book not found"}
+    return book
+
 @app.post("/api/exams/", response_model=schemas.ExamOut)
 async def add_exam(
     title: str = Form(...),

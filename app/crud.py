@@ -11,11 +11,16 @@ def create_book(db: Session, book: schemas.BookCreate):
 def get_books(db: Session):
     return db.query(models.Book).all()
 
+def get_book(db: Session, book_id: int):
+    return db.query(models.Book).filter(models.Book.id == book_id).first()
+
 def update_book(db: Session, book_id: int, book: schemas.BookCreate):
     db_book = db.query(models.Book).filter(models.Book.id == book_id).first()
     if db_book:
-        db_book.title = book.title
-        db_book.author = book.author
+        for key, value in book.dict().items():
+            if value is not None:
+                setattr(db_book, key, value)
+        
         db.commit()
         db.refresh(db_book)
     return db_book
@@ -40,6 +45,7 @@ def update_exam(db: Session, exam_id: int, exam: schemas.ExamCreate):
         for key, value in exam.dict().items():
             if value is not None:
                 setattr(db_exam, key, value)
+                
         db.commit()
         db.refresh(db_exam)
     return db_exam

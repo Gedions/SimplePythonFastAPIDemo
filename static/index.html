@@ -16,6 +16,7 @@
         <h1>Books</h1>
 
         <form id="bookForm" class="form" enctype="multipart/form-data">
+            <input type="hidden" name="id" />
             <div class="row my-4">
                 <div class="col">
                     <input class="form-control" id="title" name="title" placeholder="Title" />
@@ -88,13 +89,24 @@
     <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-2.2.0/datatables.min.js"></script>
 
     <script>
+        let bookTable;
+        let examTable;
+
+        $(document).ready(function () {
+            bookTable = $('#booksTable').DataTable();
+            examTable = $('#examTable').DataTable();
+
+            loadBooks();
+            loadExams();
+        });
+
         document.getElementById("examForm").addEventListener("submit", async function (e) {
             e.preventDefault();
             const formData = new FormData(e.target);
             const id = formData.get("id");
 
             if (id) {
-                const response = await fetch("/api/exams/", {
+                const response = await fetch(`/api/exams/${id}`, {
                     method: "PUT",
                     body: formData
                 });
@@ -114,12 +126,11 @@
         async function loadExams() {
             const res = await fetch("/api/exams/");
             const exams = await res.json();
-
-            const table = $('#examTable').DataTable();
-            table.clear();
+            
+            examTable.clear();
 
             exams.forEach(ex => {
-                table.row.add([
+                examTable.row.add([
                     ex.id,
                     ex.title,
                     ex.code,
@@ -131,7 +142,7 @@
                 ]);
             });
 
-            table.draw();
+            examTable.draw();
         }
 
         async function editExam(id) {
@@ -149,9 +160,9 @@
 
         async function deleteExam(id) {
             await fetch(`/api/exams/${id}`, { method: 'DELETE' });
+
             loadExams();
         }
-
 
         loadExams();
 
@@ -163,54 +174,58 @@
             const res = await fetch('/api/books');
             const books = await res.json();
 
-            const table = $('#booksTable').DataTable();
-            table.clear();
+            bookTable.clear();
 
             books.forEach(b => {
-                table.row.add([
+                bookTable.row.add([
                     b.id,
                     b.title,
                     b.author,
-                    `<button class= "btn btn-sm btn-info" onclick = "renameBook(${b.id})"> Rename </button>
+                    `<button class= "btn btn-sm btn-info" onclick = "editBook(${b.id})"> Edit </button>
                     <button class="btn btn-sm btn-danger" onclick="deleteBook(${b.id})">Delete</button>`
                 ]);
             });
 
-            table.draw();
+            bookTable.draw();
         }
 
         document.getElementById('bookForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            const id = formData.get('id');
 
-            const response = await fetch('/api/books/', {
-                method: 'POST',
-                body: formData
-            });
-
+            if (id) {
+                const response = await fetch(`/api/books/${id}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+            } else {
+                const response = await fetch('/api/books/', {
+                    method: 'POST',
+                    body: formData
+                });
+            }
             const result = await response.json();
             e.target.reset();
+
             loadBooks();
         });
 
         async function deleteBook(id) {
-            await fetch(`/ api / books / ${id}`, { method: 'DELETE' });
+            await fetch(`/api/books/${id}`, { method: 'DELETE' });
+
             loadBooks();
         }
 
-        async function renameBook(id) {
-            const title = prompt('New title?');
-            const author = prompt('New author? (leave blank to keep the same)');
-            const payload = {};
-            if (title) payload.title = title;
-            if (author) payload.author = author;
+        async function editBook(id) {
+            const book = await fetch(`/api/books/${id}`,
+                { method: 'GET' })
+                .then(res => res.json());
 
-            await fetch(`/ api / books / ${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            loadBooks();
+            const form = document.getElementById('bookForm');
+            form.querySelector("[name='id']").value = book.id;
+            form.querySelector("[name='title']").value = book.title;
+            form.querySelector("[name='author']").value = book.author;
         }
 
         loadBooks();
